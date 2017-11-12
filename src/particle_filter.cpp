@@ -21,7 +21,7 @@
 using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
-	// Create random numer generator
+	// Create random number generator
 	default_random_engine gen;
 	
 	// Create normal distributions
@@ -33,9 +33,9 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	particles.clear(); 					// Start with empty vector
 	double weight{1.0 / num_particles};	// Default uniform weight
 	for (int i =0; i < num_particles; ++i) {
-		std::vector<int> associations;
-		std::vector<double> sense_x;
-		std::vector<double> sense_y;
+		vector<int> associations;
+		vector<double> sense_x;
+		vector<double> sense_y;
 		particles.push_back(Particle{i,
 							dist_x(gen),
 							dist_y(gen),
@@ -82,10 +82,33 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 }
 
 void ParticleFilter::resample() {
-	// TODO: Resample particles with replacement with probability proportional to their weight. 
-	// NOTE: You may find std::discrete_distribution helpful here.
-	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
-
+	// Create random number generator and discrete distributions
+	default_random_engine gen;
+	discrete_distribution<int> intDist(0, num_particles);
+	uniform_real_distribution<double> realDist(0, 1);
+	
+	// Create new particle vector
+	vector<Particle> newParticles;
+	
+	// Get max weight of all particles
+	auto itr = max_element(particles.begin(),particles.end(),
+		[](const Particle &p1, const Particle &p2){return p1.weight < p2.weight;});
+	double mw{itr->weight};
+	
+	// Resample
+	double beta{0.0};
+	int index{intDist(gen)};
+	for (int i = 0; i < num_particles; ++i) {
+		beta += realDist(gen) * 2.0 * mw;
+		while (beta > particles[i].weight) {
+			beta -= particles[i].weight;
+			index = (index + 1) % num_particles;
+		}
+		newParticles.push_back(particles[index]);
+	}
+	
+	// Copy new particles to particles
+	particles = newParticles;
 }
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
