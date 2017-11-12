@@ -20,6 +20,32 @@
 using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
+	// Create random numer generator
+	default_random_engine gen;
+	
+	// Create normal distributions
+	normal_distribution<double> dist_x(x, std[0]);
+	normal_distribution<double> dist_y(y, std[1]);
+	normal_distribution<double> dist_theta(theta, std[2]);
+	
+	// Loop through and get poitnts
+	particles.clear(); 					// Start with empty vector
+	double weight{1.0 / num_particles};	// Default uniform weight
+	for (int i =0; i < num_particles; ++i) {
+		std::vector<int> associations;
+		std::vector<double> sense_x;
+		std::vector<double> sense_y;
+		particles.push_back(Particle{i,
+							dist_x(gen),
+							dist_y(gen),
+							dist_theta(gen),
+							weight,
+							associations,
+							sense_x,
+							sense_y});
+	}
+	
+	
 	// TODO: Set the number of particles. Initialize all particles to first position (based on estimates of 
 	//   x, y, theta and their uncertainties from GPS) and all weights to 1. 
 	// Add random Gaussian noise to each particle.
