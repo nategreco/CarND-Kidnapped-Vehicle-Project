@@ -113,6 +113,11 @@ public:
 	const bool initialized() const {
 		return is_initialized;
 	}
+	
+	/**
+	 * Transforms landmark observartions from vehicle to map coordinates
+	 */
+	std::vector<LandmarkObs> vehToMapTransform(std::vector<LandmarkObs> observations);
 };
 
 

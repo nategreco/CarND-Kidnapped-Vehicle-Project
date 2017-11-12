@@ -18,6 +18,8 @@
 
 #include "particle_filter.h"
 
+#define PARTICLES 100
+
 using namespace std;
 
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
@@ -29,7 +31,10 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 	normal_distribution<double> dist_y(y, std[1]);
 	normal_distribution<double> dist_theta(theta, std[2]);
 	
-	// Loop through and get poitnts
+	// Define number of particles
+	num_particles = PARTICLES;
+	
+	// Loop through and get points
 	particles.clear(); 					// Start with empty vector
 	double weight{1.0 / num_particles};	// Default uniform weight
 	for (int i =0; i < num_particles; ++i) {
@@ -70,10 +75,12 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
 	for (LandmarkObs &pre : predicted) {
 		double distance{std::numeric_limits<double>::max()};
-		for (const LandmarkObs &obs : observations) {
-			if (dist(pre.x, pre.y, obs.x, obs.y) < distance) {
+		for (LandmarkObs &obs : observations) {
+			double currDist{dist(pre.x, pre.y, obs.x, obs.y)};
+			if (currDist < distance) {
 				// Associate prediction with observation
-				pre.id = obs.id;
+				obs.id = pre.id;
+				distance = currDist;
 			}
 		}
 	}
@@ -81,6 +88,41 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
 		const std::vector<LandmarkObs> &observations, const Map &map_landmarks) {
+	// Save some computation
+	const double snsrRngSq{sensor_range * sensor_range};
+		
+	// Loop through all particles and update
+	for (Particle &p : particles) {
+		vector<LandmarkObs> predicted;
+		for (auto &landmark : map_landmarks.landmark_list) {
+			LandmarkObs pred{landmark.id_i, landmark.x_f, landmark.x_f};
+			double delta_x{pred.x - p.x};
+			delta_x *= delta_x;
+			double delta_y{pred.y - p.y};
+			delta_y *= delta_y;
+			if ((delta_x + delta_y) < snsrRngSq) {
+				predicted.push_back(pred);
+			}
+		}
+		
+		// Transform observations
+		vector<LandmarkObs> transformed_obs{vehToMapTransform(observations)};
+				
+		// Associate based on distance to landmark
+		dataAssociation(predicted, transformed_obs);
+		
+		double prob{1.0};
+		for(LandmarkObs &obs : transformed_obs) {
+			// Get associated landmark
+			LandmarkObs lndmrk{predicted[obs.id]};
+			
+			// Get weights
+			prob = (1.0 / (2.0 * M_PI * std_landmark[0] * std_landmark[1])) * 
+				exp(-(pow(lndmrk.x - obs.x, 2.0) / (2.0 * pow(std_landmark[0], 2)) + 
+					(pow(lndmrk.x - obs.y, 2.0) / (2.0 * pow(std_landmark[1], 2.0)))));
+		}
+		p.weight = prob;
+	}
 	// TODO: Update the weights of each particle using a mult-variate Gaussian distribution. You can read
 	//   more about this distribution here: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
 	// NOTE: The observations are given in the VEHICLE'S coordinate system. Your particles are located
@@ -141,6 +183,11 @@ Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> ass
 
  	return particle;
 }
+
+vector<LandmarkObs> ParticleFilter::vehToMapTransform(vector<LandmarkObs> observations) {
+	
+}
+
 
 string ParticleFilter::getAssociations(Particle best)
 {
