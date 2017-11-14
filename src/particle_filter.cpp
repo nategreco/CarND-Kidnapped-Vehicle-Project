@@ -106,7 +106,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		}
 		
 		// Transform observations
-		vector<LandmarkObs> transformed_obs{vehToMapTransform(observations)};
+		vector<LandmarkObs> transformed_obs{vehToMapTransform(observations, p)};
 				
 		// Associate based on distance to landmark
 		dataAssociation(predicted, transformed_obs);
@@ -184,8 +184,16 @@ Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> ass
  	return particle;
 }
 
-vector<LandmarkObs> ParticleFilter::vehToMapTransform(vector<LandmarkObs> observations) {
-	
+vector<LandmarkObs> ParticleFilter::vehToMapTransform(
+        const vector<LandmarkObs> observations,
+        const Particle p) {
+	vector<LandmarkObs> transformed;
+    for (const LandmarkObs &obs : observations) {
+        double x{p.x + cos(p.theta) * obs.x - sin(p.theta) * obs.y};
+        double y{p.y + sin(p.theta) * obs.x + cos(p.theta) * obs.y};
+        transformed.push_back({obs.id, x, y});
+    }
+    return transformed;
 }
 
 

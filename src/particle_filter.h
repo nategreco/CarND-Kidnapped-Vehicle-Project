@@ -117,7 +117,9 @@ public:
 	/**
 	 * Transforms landmark observartions from vehicle to map coordinates
 	 */
-	std::vector<LandmarkObs> vehToMapTransform(std::vector<LandmarkObs> observations);
+	std::vector<LandmarkObs> vehToMapTransform(
+            const std::vector<LandmarkObs> observations,
+            const Particle p);
 };
 
 
