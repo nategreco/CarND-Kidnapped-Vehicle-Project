@@ -81,8 +81,8 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	}
 }
 
-void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
-	for (LandmarkObs &pre : predicted) {
+void ParticleFilter::dataAssociation(const std::vector<LandmarkObs> &predicted, std::vector<LandmarkObs> &observations) {
+	for (const LandmarkObs &pre : predicted) {
 		double distance{std::numeric_limits<double>::max()};
 		for (LandmarkObs &obs : observations) {
 			double currDist{dist(pre.x, pre.y, obs.x, obs.y)};
@@ -97,39 +97,34 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
 		const std::vector<LandmarkObs> &observations, const Map &map_landmarks) {
-	// Save some computation
-	const double snsrRngSq{sensor_range * sensor_range};
-		
 	// Loop through all particles and update
 	for (Particle &p : particles) {
 		vector<LandmarkObs> predicted;
 		for (auto &landmark : map_landmarks.landmark_list) {
-			LandmarkObs pred{landmark.id_i, landmark.x_f, landmark.x_f};
-			double delta_x{pred.x - p.x};
-			delta_x *= delta_x;
-			double delta_y{pred.y - p.y};
-			delta_y *= delta_y;
-			if ((delta_x + delta_y) < snsrRngSq) {
-				predicted.push_back(pred);
+			if (dist(landmark.x_f, landmark.y_f, p.x, p.y) < sensor_range) {
+				predicted.push_back({landmark.id_i, landmark.x_f, landmark.y_f});
 			}
 		}
-		
+        
 		// Transform observations
 		vector<LandmarkObs> transformed_obs{vehToMapTransform(observations, p)};
-				
+        
 		// Associate based on distance to landmark
 		dataAssociation(predicted, transformed_obs);
-		
+        
 		double prob{1.0};
 		for(LandmarkObs &obs : transformed_obs) {
 			// Get associated landmark
-			LandmarkObs lndmrk{predicted[obs.id]};
-			
-			// Get weights
-			prob = (1.0 / (2.0 * M_PI * std_landmark[0] * std_landmark[1])) * 
-				exp(-(pow(lndmrk.x - obs.x, 2.0) / (2.0 * pow(std_landmark[0], 2.0)) + 
-					(pow(lndmrk.x - obs.y, 2.0) / (2.0 * pow(std_landmark[1], 2.0)))));
+			auto pos = find_if(predicted.begin(), predicted.end(), [&obs](const LandmarkObs &p){return (p.id == obs.id);});
+            LandmarkObs lndmrk = *pos;
+            
+            // Get weights
+			prob *= (1.0 / (2.0 * M_PI * std_landmark[0] * std_landmark[1])) * 
+				exp(-(pow(obs.x - lndmrk.x, 2.0) / (2.0 * pow(std_landmark[0], 2.0)) + 
+				(pow(obs.y - lndmrk.y, 2.0) / (2.0 * pow(std_landmark[1], 2.0)))));
 		}
+        
+        // Set particle weight
 		p.weight = prob;
 	}
 }
