@@ -51,6 +51,9 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 							sense_x,
 							sense_y});
 	}
+	
+	// Set initialzied flag
+	is_initialized = true;
 }
 
 void ParticleFilter::prediction(double delta_t, double std_pos[], double velocity, double yaw_rate) {
@@ -129,16 +132,6 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		}
 		p.weight = prob;
 	}
-	// TODO: Update the weights of each particle using a mult-variate Gaussian distribution. You can read
-	//   more about this distribution here: https://en.wikipedia.org/wiki/Multivariate_normal_distribution
-	// NOTE: The observations are given in the VEHICLE'S coordinate system. Your particles are located
-	//   according to the MAP'S coordinate system. You will need to transform between the two systems.
-	//   Keep in mind that this transformation requires both rotation AND translation (but no scaling).
-	//   The following is a good resource for the theory:
-	//   https://www.willamette.edu/~gorr/classes/GeneralGraphics/Transforms/transforms2d.htm
-	//   and the following is a good resource for the actual equation to implement (look at equation 
-	//   3.33
-	//   http://planning.cs.uiuc.edu/node99.html
 }
 
 void ParticleFilter::resample() {
