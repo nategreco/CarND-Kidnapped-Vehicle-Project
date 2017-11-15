@@ -19,6 +19,7 @@
 #include "particle_filter.h"
 
 #define PARTICLES 100
+#define ZEROCHK 0.0001
 
 using namespace std;
 
@@ -62,12 +63,17 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 		normal_distribution<double> dist_x(p.x, std_pos[0]);
 		normal_distribution<double> dist_y(p.y, std_pos[1]);
 		normal_distribution<double> dist_theta(p.theta, std_pos[2]);
-		
+				
 		// Update with predicted positions
-		p.x = dist_x(gen) + (velocity / yaw_rate) * 
-			(sin(p.theta + yaw_rate * delta_t) - sin(p.theta));
-		p.y = dist_y(gen) + (velocity / yaw_rate) * 
-			(cos(p.theta) - cos(p.theta + yaw_rate * delta_t));
+		if (yaw_rate < ZEROCHK) { // Check for division by zero
+			p.x = dist_x(gen) + velocity * delta_t * cos(p.theta);
+			p.y = dist_y(gen) + velocity * delta_t * sin(p.theta);
+		} else {
+			p.x = dist_x(gen) + (velocity / yaw_rate) * 
+				(sin(p.theta + yaw_rate * delta_t) - sin(p.theta));
+			p.y = dist_y(gen) + (velocity / yaw_rate) * 
+				(cos(p.theta) - cos(p.theta + yaw_rate * delta_t));
+		}
 		p.theta = dist_theta(gen) + delta_t * yaw_rate;
 	}
 }
@@ -118,7 +124,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			
 			// Get weights
 			prob = (1.0 / (2.0 * M_PI * std_landmark[0] * std_landmark[1])) * 
-				exp(-(pow(lndmrk.x - obs.x, 2.0) / (2.0 * pow(std_landmark[0], 2)) + 
+				exp(-(pow(lndmrk.x - obs.x, 2.0) / (2.0 * pow(std_landmark[0], 2.0)) + 
 					(pow(lndmrk.x - obs.y, 2.0) / (2.0 * pow(std_landmark[1], 2.0)))));
 		}
 		p.weight = prob;
