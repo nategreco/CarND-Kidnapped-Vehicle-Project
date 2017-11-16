@@ -130,26 +130,26 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 }
 
 void ParticleFilter::resample() {
-	// Create random number generator and discrete distributions
-	default_random_engine gen;
-	discrete_distribution<int> intDist(0, num_particles);
-	uniform_real_distribution<double> realDist(0, 1);
-	
-	// Create new particle vector
-	vector<Particle> newParticles;
-	
 	// Get max weight of all particles
 	auto itr = max_element(particles.begin(),particles.end(),
 		[](const Particle &p1, const Particle &p2){return p1.weight < p2.weight;});
 	double mw{itr->weight};
+    
+	// Create random number generator and discrete distributions
+	default_random_engine gen;
+	discrete_distribution<int> intDist(0, num_particles - 1);
+	uniform_real_distribution<double> weightDist(0.0, mw);
+	
+	// Create new particle vector
+	vector<Particle> newParticles;
 	
 	// Resample
 	double beta{0.0};
 	int index{intDist(gen)};
 	for (int i = 0; i < num_particles; ++i) {
-		beta += realDist(gen) * 2.0 * mw;
-		while (beta > particles[i].weight) {
-			beta -= particles[i].weight;
+		beta += weightDist(gen) * 2.0;
+		while (beta > particles[index].weight) {
+			beta -= particles[index].weight;
 			index = (index + 1) % num_particles;
 		}
 		newParticles.push_back(particles[index]);
