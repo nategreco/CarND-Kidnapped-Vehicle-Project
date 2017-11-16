@@ -82,17 +82,17 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 }
 
 void ParticleFilter::dataAssociation(const std::vector<LandmarkObs> &predicted, std::vector<LandmarkObs> &observations) {
-	for (const LandmarkObs &pre : predicted) {
-		double distance{std::numeric_limits<double>::max()};
-		for (LandmarkObs &obs : observations) {
-			double currDist{dist(pre.x, pre.y, obs.x, obs.y)};
-			if (currDist < distance) {
+    for (LandmarkObs &obs : observations) {
+        double distance{std::numeric_limits<double>::max()};
+        for (const LandmarkObs &pre : predicted) {
+            double currDist{dist(pre.x, pre.y, obs.x, obs.y)};
+            if (currDist < distance) {
 				// Associate prediction with observation
 				obs.id = pre.id;
 				distance = currDist;
 			}
-		}
-	}
+        }
+    }
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
