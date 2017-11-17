@@ -33,11 +33,12 @@ My project includes the following files:
 
 #### 1. Implementation
 
-ToDo
+Implementation of the particle filter mainly followed the methodology out lined in the courses.  The implementations that were left to us were the data assocation function and piecing it all together.  Additionally we had to implement a multivariate normal distribution to handle the weighting of multiple sensor measurements.  Additionally we had the ability to tweak the number of particles.  More particles produces higher accuracy, however, the trade off is performance.  This must be closely monitored in a real time application.
 
 #### 2. Results
 
-ToDo
+Resulting error was 0.115, 0.111, and 0.004, in the x, y, and yaw respectively.
+
 Dataset 1:
 
 ![Dataset 1][image1]
